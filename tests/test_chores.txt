@@ -1,0 +1,18 @@
+HARD
+Varrer
+Passar pano
+Tirar poeira
+Organizar Comodos
+MID
+Organizar Guarda Roupas
+Lavar Louca
+Limpar Fogao
+Levantar Moveis
+Limpar Box
+Lavar Roupas
+LIGHT
+Trocar roupa de cama
+Limpar Patente
+Abrir Janelas
+Levar Lixo
+Limpar Fraldas

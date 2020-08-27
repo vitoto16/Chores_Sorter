@@ -2,9 +2,14 @@ import os
 import random
 import itertools
 from collections import deque
+from math import floor, ceil
 
+# ABSOLUTE PATH TO THE CHORES FILE
 here = os.path.dirname(os.path.abspath(__file__))
 chores_file = os.path.join(here, 'chores.txt')
+
+# ABSOLUTE PATH TO THE TEST CHORES FILE
+test_chores_file = os.path.join(here, '../tests/test_chores.txt')
 
 
 class Resident:
@@ -17,6 +22,18 @@ class Resident:
 
     def __str__(self):
         return self.__name
+
+    def is_crianca(self):
+        if self.age < 10:
+            return True
+
+    def is_crianca_grande(self):
+        if self.age < 14 and self.age >= 10:
+            return True
+
+    def is_adulto(self):
+        if self.age >= 15:
+            return True
 
     @property
     def name(self):
@@ -44,12 +61,24 @@ class Chores:
     def __init__(self):
         self.all_chores = dict()
         self.palavras = deque()
+
+    # READ CHORES FILE AND MAKES A DICTIONARY OUT OF THE CONTENT
+    def le_arquivo(self):
         with open(chores_file) as arquivo:
             for linha in arquivo:
                 linha = linha.strip()
                 self.palavras.append(linha)
         self._monta_dicionario()
 
+    # READ TEST CHORES FILE AND MAKES A DICTIONARY OUT OF THE CONTENT
+    def _le_arquivo_teste(self):
+        with open(test_chores_file) as arquivo:
+            for linha in arquivo:
+                linha = linha.strip()
+                self.palavras.append(linha)
+        self._monta_dicionario()
+
+    # BUILDS A DICTIONARY WITH DIFFICULTIES AS KEYS AND CHORES AS VALUES
     def _monta_dicionario(self):
         for palavra in self.palavras:
             palavra = palavra.strip()
@@ -74,6 +103,7 @@ class Sorteio:
         self.residentes = residents
         self.tarefas = tarefas
 
+    # SORTS CHORES BETWEEN RESIDENTS PASSED AS KWARGS
     def distribui_tarefas(self):
         self._calcula_numero_tarefas()
 
@@ -83,16 +113,9 @@ class Sorteio:
                 if len(residente.tarefas_individuais) < residente.numero_tarefas:
                     tarefa = dificuldade.pop(random.randint(0, len(dificuldade) - 1))
                     residente.tarefas_individuais.append(tarefa)
-                else:
-                    continue
+
                 print(residente, residente.tarefas_individuais)
                 print(len(residente.tarefas_individuais), residente.numero_tarefas)
-
-                """for residente in self.residentes:
-                        if len(dificuldade) != 0 and len(residente.tarefas_individuais)<=residente.numero_tarefas:
-                            tarefa = dificuldade.pop(random.randint(0, len(dificuldade) - 1))
-                            residente.tarefas_individuais.append(tarefa)"""
-
 
         for residente in self.residentes:
             print(residente.name)
@@ -102,14 +125,25 @@ class Sorteio:
         return list(self.tarefas.all_chores.values())
 
     def _calcula_numero_tarefas(self):
-        if len(self._total_tarefas()) % self._numero_residentes() == 0:
+        if self._total_tarefas() % self._numero_residentes() == 0:
             for residente in self.residentes:
-                residente.numero_tarefas=len(self._total_tarefas())/self._numero_residentes()
+                residente.numero_tarefas = self._total_tarefas() / self._numero_residentes()
+        else:
+            if self._criancas():
+                for crianca in self._criancas():
+                    crianca.numero_tarefas = floor(self._total_tarefas() / self._numero_residentes())
+            if self._criancas_grandes():
+                for crianca_grande in self._criancas_grandes():
+                    crianca_grande.numero_tarefas = floor(self._total_tarefas() / self._numero_residentes())
+            if self._adultos():
+                for adulto in self._adultos():
+                    adulto.numero_tarefas = ceil(self._total_tarefas() / self._numero_residentes())
+
 
     def _total_tarefas(self):
-        lista_valores = list()
+        lista_valores = 0
         for dificuldade in self._lista_tarefas():
-            lista_valores += dificuldade
+            lista_valores += len(dificuldade)
 
         return lista_valores
 
@@ -120,7 +154,39 @@ class Sorteio:
         if len(self.residentes) == 1:
             return self.residentes[0]
         else:
-            return self.residentes[random.randint(0, self.numero_residentes() - 1)]
+            return random.choice(self.residentes)
+
+    def _adulto_aleatorio(self):
+        adultos = list()
+        for residente in self.residentes:
+            if residente.is_adulto():
+                adultos.append(residente)
+
+        return random.choice(adultos)
+
+    def _criancas(self):
+        criancas = list()
+        for residente in self.residentes:
+            if residente.is_crianca():
+                criancas.append(residente)
+
+        return criancas
+
+    def _criancas_grandes(self):
+        criancas_grandes = list()
+        for residente in self.residentes:
+            if residente.is_crianca_grande():
+                criancas_grandes.append(residente)
+
+        return criancas_grandes
+
+    def _adultos(self):
+        adultos = list()
+        for residente in self.residentes:
+            if residente.is_adulto():
+                adultos.append(residente)
+
+        return adultos
 
     @property
     def numero_residentes(self):
