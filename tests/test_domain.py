@@ -13,7 +13,7 @@ def tarefas():
     return Chores()
 
 
-def test_deve_designar_todas_as_tarefas_para_o_residente_quando_existe_apenas_um_residente(vittor, tarefas):
+def test_deve_designar_todas_as_tarefas_para_o_residente_quando_existe_apenas_um_residente_adulto(vittor, tarefas):
     tarefas._le_arquivo_teste()
     lista_valores = list(tarefas.all_chores.values())
     lista_tarefas = list()
@@ -47,7 +47,7 @@ def test_deve_designar_mais_tarefas_a_pessoas_de_maior_idade_quando_tarefas_nao_
     dante = Resident('Dante', 0)
     dani = Resident('Dani', 21)
     fran = Resident('Fran', 26)
-    valentina = Resident('Valentina', 1)
+    valentina = Resident('Valentina', 0)
 
     tarefas._le_arquivo_teste()
 
@@ -57,3 +57,17 @@ def test_deve_designar_mais_tarefas_a_pessoas_de_maior_idade_quando_tarefas_nao_
 
     assert (len(dante.tarefas_individuais) == 2 and len(valentina.tarefas_individuais) == 2)
 
+
+def test_deve_designar_apenas_tarefas_faceis_a_criancas_pequenas(vittor, tarefas):
+    dante = Resident('Dante', 0)
+
+    tarefas_teste = Chores()
+
+    tarefas._le_arquivo_teste()
+    tarefas_teste._le_arquivo_teste()
+
+    sorteio = Sorteio(tarefas, vittor, dante)
+
+    sorteio.distribui_tarefas()
+
+    assert dante.tarefas_individuais == tarefas_teste.all_chores['LIGHT']
