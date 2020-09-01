@@ -1,14 +1,6 @@
-import os
 import random
 from math import floor, ceil
 from operator import attrgetter
-
-# ABSOLUTE PATH TO THE CHORES FILE
-here = os.path.dirname(os.path.abspath(__file__))
-chores_file = os.path.join(here, 'chores.txt')
-
-# ABSOLUTE PATH TO THE TEST CHORES FILE
-test_chores_file = os.path.join(here, '../tests/test_chores.txt')
 
 
 class Resident:
@@ -23,15 +15,15 @@ class Resident:
         return self.__name
 
     def is_crianca(self):
-        if self.age < 10:
+        if self.__age < 10:
             return True
 
     def is_crianca_grande(self):
-        if 14 > self.age >= 10:
+        if 14 > self.__age >= 10:
             return True
 
     def is_adulto(self):
-        if self.age >= 15:
+        if self.__age >= 15:
             return True
 
     @property
@@ -77,13 +69,18 @@ class Chores:
 
     def tarefa_facil_aleatoria(self):
         dificuldade = self.__chores['LIGHT']
-        tarefa = random.choice(dificuldade)
-        return self.__chores[dificuldade].pop(tarefa)
+        tarefa = random.choice(range(len(dificuldade)))
+        return dificuldade.pop(tarefa)
 
     def tarefa_media_aleatoria(self):
         dificuldade = self.__chores['MID']
-        tarefa = random.choice(dificuldade)
-        return self.__chores[dificuldade].pop(tarefa)
+        tarefa = random.choice(range(len(dificuldade)))
+        return dificuldade.pop(tarefa)
+
+    def tarefa_dificil_aleatoria(self):
+        dificuldade = self.__chores['HARD']
+        tarefa = random.choice(range(len(dificuldade)))
+        return dificuldade.pop(tarefa)
 
     @property
     def chores(self):
@@ -101,76 +98,103 @@ class Sorter:
         self.tarefas = tarefas
 
     def distribui_tarefas(self):
+        self._calcula_numero_tarefas()
 
+        self._distribui_tarefas_faceis()
+        self._distribui_tarefas_medias()
+        self._distribui_tarefas_dificeis()
 
     def _calcula_numero_tarefas(self):
-        if self._criancas():
-            for crianca in self._criancas():
-                crianca.numero_tarefas = floor(self.tarefas.total_tarefas / self._numero_residentes())
-        if self._criancas_grandes():
-            for crianca_grande in self._criancas_grandes():
-                crianca_grande.numero_tarefas = floor(self.tarefas.total_tarefas / self._numero_residentes())
-        if self._adultos():
-            for adulto in self._adultos():
-                adulto.numero_tarefas = ceil(self.tarefas.total_tarefas / self._numero_residentes())
+        for residente in self.residentes:
+            if residente.is_crianca():
+                residente.numero_tarefas = floor(self.tarefas.total_tarefas / self._numero_residentes())
+            if residente.is_crianca_grande():
+                residente.numero_tarefas = floor(self.tarefas.total_tarefas / self._numero_residentes())
+            if residente.is_adulto():
+                residente.numero_tarefas = ceil(self.tarefas.total_tarefas / self._numero_residentes())
 
     def _distribui_tarefas_faceis(self):
+        while len(self.tarefas.chores['LIGHT']) > 0 and self._crianca_disponivel():
+            for residente in sorted(self.residentes, key=attrgetter('age'), reverse=True):
+                if residente.is_crianca() and self.resident_is_valid(residente):
+                    tarefa = self.tarefas.tarefa_facil_aleatoria()
+                    residente.tarefas_individuais.append(tarefa)
+                    print(residente, residente.tarefas_individuais)
+        while len(self.tarefas.chores['LIGHT']) > 0 and self._crianca_grande_disponivel():
+            for residente in sorted(self.residentes, key=attrgetter('name'), reverse=True):
+                if residente.is_crianca_grande() and self.resident_is_valid(residente):
+                    tarefa = self.tarefas.tarefa_facil_aleatoria()
+                    residente.tarefas_individuais.append(tarefa)
+                    print(residente, residente.tarefas_individuais)
         while len(self.tarefas.chores['LIGHT']) > 0:
-            if self._criancas():
-                for crianca in sorted(self._criancas(), key=attrgetter('age'), reverse=True):
-                    if self.resident_is_valid(crianca):
-                        tarefa = self.tarefas.tarefa_facil_aleatoria()
-                        crianca.tarefas_individuais.append(tarefa)
-            elif self._criancas_grandes():
-                for crianca_grande in sorted(self._criancas_grandes(), key=attrgetter('age'), reverse=True):
-                    if self.resident_is_valid(crianca_grande):
-                        tarefa = self.tarefas.tarefa_facil_aleatoria()
-                        crianca_grande.tarefas_individuais.append(tarefa)
+            for residente in sorted(self.residentes, key=attrgetter('name'), reverse=True):
+                if residente.is_adulto():
+                    tarefa = self.tarefas.tarefa_facil_aleatoria()
+                    residente.tarefas_individuais.append(tarefa)
+                    print(residente, residente.tarefas_individuais)
 
-        # REVISAR LOGICA DE DISTRIBUICAO. SE TIVER CRIANÇAS MAS JA NAO ESTAO DISPONIVEIS
+    def _distribui_tarefas_medias(self):
+        while len(self.tarefas.chores['MID']) > 0 and self._crianca_grande_disponivel():
+            for residente in sorted(self.residentes, key=attrgetter('name'), reverse=True):
+                if residente.is_crianca_grande() and len(self.tarefas.chores['MID']):
+                    tarefa = self.tarefas.tarefa_media_aleatoria()
+                    residente.tarefas_individuais.append(tarefa)
+                    print(residente, residente.tarefas_individuais)
+        while len(self.tarefas.chores['MID']) > 0:
+            for residente in sorted(self.residentes, key=attrgetter('name'), reverse=True):
+                if residente.is_adulto() and len(self.tarefas.chores['MID']):
+                    tarefa = self.tarefas.tarefa_media_aleatoria()
+                    residente.tarefas_individuais.append(tarefa)
+                    print(residente, residente.tarefas_individuais)
 
+    def _distribui_tarefas_dificeis(self):
+        while len(self.tarefas.chores['HARD']) > 0:
+            for residente in sorted(self.residentes, key=attrgetter('name'), reverse=True):
+                if residente.is_adulto() and len(self.tarefas.chores['HARD']):
+                    tarefa = self.tarefas.tarefa_dificil_aleatoria()
+                    residente.tarefas_individuais.append(tarefa)
+                    print(residente, residente.tarefas_individuais)
 
     def _numero_residentes(self):
         return len(self.residentes)
 
-    def _adultos(self):
-        adultos = list()
-        for residente in self.residentes:
-            if residente.is_adulto():
-                adultos.append(residente)
+    # def _criancas(self):
+    #     criancas = list()
+    #     for residente in self.residentes:
+    #         if residente.is_crianca():
+    #             criancas.append(residente)
+    #
+    #     return criancas
+    #
+    # def _crianca_grande(self):
+    #     criancas_grandes = list()
+    #     for residente in self.residentes:
+    #         if residente.is_crianca_grande():
+    #             criancas_grandes.append(residente)
+    #
+    #     return criancas_grandes
+    #
+    # def _adultos(self):
+    #     criancas = list()
+    #     for residente in self.residentes():
+    #         if residente.is_crianca():
+    #             criancas.append(criancas)
+    #
+    #     return criancas
 
-        return adultos
+    def _crianca_disponivel(self):
+        for residente in sorted(self.residentes, key=attrgetter('age'), reverse=True):
+            if residente.is_crianca() and self.resident_is_valid(residente):
+                return residente
 
-    def _criancas_grandes(self):
-        criancas_grandes = list()
-        for residente in self.residentes:
-            if residente.is_crianca_grande():
-                criancas_grandes.append(residente)
+        return False
 
-        return criancas_grandes
+    def _crianca_grande_disponivel(self):
+        for residente in sorted(self.residentes, key=attrgetter('age'), reverse=True):
+            if residente.is_crianca_grande() and self.resident_is_valid(residente):
+                return residente
 
-    def _criancas(self):
-        criancas = list()
-        for residente in self.residentes:
-            if residente.is_crianca():
-                criancas.append(residente)
-
-        return criancas
-
-    def _residente_aleatorio(self):
-        if len(self.residentes) == 1:
-            return self.residentes[0]
-        else:
-            return random.choice(self.residentes)
-
-    def _adulto_aleatorio(self):
-        return random.choice(self._adultos())
-
-    def _crianca_grande_aleatoria(self):
-        return random.choice(self._criancas_grandes())
-
-    def _crianca_aleatoria(self):
-        return random.choice(self._criancas())
+        return False
 
     @staticmethod
     def resident_is_valid(resident: Resident):

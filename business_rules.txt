@@ -1,0 +1,8 @@
+- Distribui 'x' tarefas de casa a 'y' moradores
+- Crianças pequenas (5 - 10) só recebem tarefas fáceis
+- Crianças maiores (10 - 15) recebem tarefas fáceis e médias
+- Adultos e adolescentes recebem qualquer tipo de tarefa
+- O máximo de tarefas para uma criança é o resultado do 'total de tarefas' pelo 'numero de residentes'
+- No caso de divisão inexata, o número de tarefas para crianças é arredondado para baixo e
+adultos dividem o restante
+- No caso de mais pessoas que tarefas, a pessoa mais nova fica sem tarefas.
