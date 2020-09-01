@@ -181,8 +181,8 @@ class Sorteio:
         return lista_valores
 
     def _tarefa_aleatoria(self):
-        dificuldade = random.randint(0, len(self._lista_tarefas()) - 1)
-        tarefa = random.randint(0, len(self._lista_tarefas()[dificuldade]) - 1)
+        dificuldade = random.choice(self._lista_tarefas())
+        tarefa = random.choice(dificuldade)
         return self._lista_tarefas()[dificuldade].pop(tarefa)
 
     def _numero_residentes(self):
@@ -242,7 +242,6 @@ class Sorteio:
                     return crianca
 
         return False
-
 
     @property
     def numero_residentes(self):

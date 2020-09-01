@@ -1,6 +1,6 @@
 import pytest
 
-from sorter.domain import Chores, Sorteio, Resident
+from chores_sorter.sorter.domain import Chores, Sorteio, Resident
 
 
 @pytest.fixture
