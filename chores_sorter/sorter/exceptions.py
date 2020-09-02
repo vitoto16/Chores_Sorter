@@ -1,0 +1,2 @@
+class CriancaMuitoNova(Exception):
+    pass

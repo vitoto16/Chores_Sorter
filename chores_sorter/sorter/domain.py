@@ -1,22 +1,17 @@
-import os
 import random
-import itertools
-from collections import deque
 from math import floor, ceil
-
-# ABSOLUTE PATH TO THE CHORES FILE
-here = os.path.dirname(os.path.abspath(__file__))
-chores_file = os.path.join(here, 'chores.txt')
-
-# ABSOLUTE PATH TO THE TEST CHORES FILE
-test_chores_file = os.path.join(here, '../tests/test_chores.txt')
+from operator import attrgetter
+from chores_sorter.sorter.exceptions import CriancaMuitoNova
 
 
 class Resident:
 
     def __init__(self, name, age):
         self.__name = name
-        self.__age = age
+        if age < 5:
+            raise CriancaMuitoNova("Esta crianca é muito pequena!")
+        else:
+            self.__age = age
         self.__tarefas_individuais = list()
         self.__numero_tarefas = 0
 
@@ -24,15 +19,15 @@ class Resident:
         return self.__name
 
     def is_crianca(self):
-        if self.age < 10:
+        if 5 <= self.__age < 10:
             return True
 
     def is_crianca_grande(self):
-        if 14 > self.age >= 10:
+        if 10 <= self.__age < 15:
             return True
 
     def is_adulto(self):
-        if self.age >= 15:
+        if self.__age >= 15:
             return True
 
     @property
@@ -58,120 +53,11 @@ class Resident:
 
 class Chores:
 
-    def __init__(self):
-        self.all_chores = dict()
-        self.palavras = deque()
-
-    # READS CHORES FILE AND MAKES A DICTIONARY OUT OF THE CONTENT
-    def le_arquivo(self):
-        with open(chores_file) as arquivo:
-            for linha in arquivo:
-                linha = linha.strip()
-                self.palavras.append(linha)
-        self._monta_dicionario()
-
-    # READ TEST CHORES FILE AND MAKES A DICTIONARY OUT OF THE CONTENT
-    def _le_arquivo_teste(self):
-        with open(test_chores_file) as arquivo:
-            for linha in arquivo:
-                linha = linha.strip()
-                self.palavras.append(linha)
-        self._monta_dicionario()
-
-    # BUILDS A DICTIONARY WITH DIFFICULTIES AS KEYS AND CHORES AS VALUES
-    def _monta_dicionario(self):
-        for palavra in self.palavras:
-            palavra = palavra.strip()
-
-            if palavra == 'HARD':
-                self.all_chores[palavra] = list(itertools.islice(self.palavras,
-                                                                 self.palavras.index('HARD') + 1,
-                                                                 self.palavras.index('MID')))
-            elif palavra == 'MID':
-                self.all_chores[palavra] = list(itertools.islice(self.palavras,
-                                                                 self.palavras.index('MID') + 1,
-                                                                 self.palavras.index('LIGHT')))
-            elif palavra == 'LIGHT':
-                self.all_chores[palavra] = list(itertools.islice(self.palavras,
-                                                                 self.palavras.index('LIGHT') + 1,
-                                                                 self.palavras.maxlen))
-
-
-class Sorteio:
-
-    def __init__(self, tarefas: Chores, *residents: Resident):
-        self.residentes = residents
-        self.tarefas = tarefas
-
-    # SORTS CHORES BETWEEN RESIDENTS PASSED AS ARGS
-    def distribui_tarefas(self):
-        self._calcula_numero_tarefas()
-
-        for dificuldade in self._lista_tarefas():
-            while len(dificuldade) > 0:
-                if dificuldade == self.tarefas.all_chores['HARD']:
-                    residente = self._adulto_aleatorio()
-                    if len(residente.tarefas_individuais) < residente.numero_tarefas:
-                        tarefa = dificuldade.pop(random.randint(0, len(dificuldade) - 1))
-                        residente.tarefas_individuais.append(tarefa)
-                    elif self._residente_incompleto(residente):
-                        tarefa = dificuldade.pop(random.randint(0, len(dificuldade) - 1))
-                        self._residente_incompleto(residente).tarefas_individuais.append(tarefa)
-                    else:
-                        continue
-                elif dificuldade == self.tarefas.all_chores['MID']:
-                    if self._criancas_grandes():
-                        choices = [self._adulto_aleatorio(), self._crianca_grande_aleatoria()]
-                        residente = random.choice(choices)
-                    else:
-                        residente = self._adulto_aleatorio()
-                else:
-                    if self._criancas() and self._criancas_grandes():
-                        choices = [self._crianca_aleatoria(), self._crianca_grande_aleatoria()]
-                        residente = random.choice(choices)
-                    elif self._criancas():
-                        residente = self._crianca_aleatoria()
-                    elif self._criancas_grandes():
-                        residente = self._crianca_grande_aleatoria()
-                    else:
-                        residente = self._adulto_aleatorio()
-                        tarefa = dificuldade.pop(random.randint(0, len(dificuldade) - 1))
-                        residente.tarefas_individuais.append(tarefa)
-
-                if residente.is_crianca_grande() or residente.is_crianca():
-                    if len(residente.tarefas_individuais) < residente.numero_tarefas:
-                        tarefa = dificuldade.pop(random.randint(0, len(dificuldade) - 1))
-                        residente.tarefas_individuais.append(tarefa)
-                    elif self._residente_incompleto(residente):
-                        tarefa = dificuldade.pop(random.randint(0, len(dificuldade) - 1))
-                        self._residente_incompleto(residente).tarefas_individuais.append(tarefa)
-                    else:
-                        continue
-
-                print(residente, residente.tarefas_individuais)
-                print(len(residente.tarefas_individuais), residente.numero_tarefas)
-
-        for residente in self.residentes:
-            print(residente.name)
-            print(residente.tarefas_individuais)
+    def __init__(self, chores: dict):
+        self.__chores = chores
 
     def _lista_tarefas(self):
-        return list(self.tarefas.all_chores.values())
-
-    def _calcula_numero_tarefas(self):
-        if self._total_tarefas() % self._numero_residentes() == 0:
-            for residente in self.residentes:
-                residente.numero_tarefas = self._total_tarefas() / self._numero_residentes()
-        else:
-            if self._criancas():
-                for crianca in self._criancas():
-                    crianca.numero_tarefas = floor(self._total_tarefas() / self._numero_residentes())
-            if self._criancas_grandes():
-                for crianca_grande in self._criancas_grandes():
-                    crianca_grande.numero_tarefas = floor(self._total_tarefas() / self._numero_residentes())
-            if self._adultos():
-                for adulto in self._adultos():
-                    adulto.numero_tarefas = ceil(self._total_tarefas() / self._numero_residentes())
+        return list(self.__chores.values())
 
     def _total_tarefas(self):
         lista_valores = 0
@@ -180,73 +66,151 @@ class Sorteio:
 
         return lista_valores
 
-    def _tarefa_aleatoria(self):
+    def tarefa_aleatoria(self):
         dificuldade = random.choice(self._lista_tarefas())
         tarefa = random.choice(dificuldade)
         return self._lista_tarefas()[dificuldade].pop(tarefa)
 
+    def tarefa_facil_aleatoria(self):
+        dificuldade = self.__chores['LIGHT']
+        tarefa = random.choice(range(len(dificuldade)))
+        return dificuldade.pop(tarefa)
+
+    def tarefa_media_aleatoria(self):
+        dificuldade = self.__chores['MID']
+        tarefa = random.choice(range(len(dificuldade)))
+        return dificuldade.pop(tarefa)
+
+    def tarefa_dificil_aleatoria(self):
+        dificuldade = self.__chores['HARD']
+        tarefa = random.choice(range(len(dificuldade)))
+        return dificuldade.pop(tarefa)
+
+    @property
+    def chores(self):
+        return self.__chores
+
+    @property
+    def total_tarefas(self):
+        return self._total_tarefas()
+
+
+class Sorter:
+
+    def __init__(self, tarefas: Chores, *residents: Resident):
+        self.residentes = residents
+        self.tarefas = tarefas
+
+    def distribui_tarefas(self):
+        self._calcula_numero_tarefas()
+
+        self._distribui_tarefas_faceis()
+
+        if self._crianca_grande_disponivel() or self._adultos():
+            self._distribui_tarefas_medias()
+        else:
+            print("Tarefas médias não serão designadas pois não existem residentes disponíveis para cumprí-las")
+        if self._adultos():
+            self._distribui_tarefas_dificeis()
+        else:
+            print("Tarefas difíceis não serão designadas pois não existem residentes disponíveis para cumprí-las")
+
+    def _calcula_numero_tarefas(self):
+        for residente in self.residentes:
+            if residente.is_crianca():
+                if self._adultos() or self._crianca_grande_disponivel():
+                    residente.numero_tarefas = floor(self.tarefas.total_tarefas / self._numero_residentes())
+                else:
+                    residente.numero_tarefas = ceil(self.tarefas.total_tarefas / self._numero_residentes())
+            if residente.is_crianca_grande():
+                if self._adultos():
+                    residente.numero_tarefas = floor(self.tarefas.total_tarefas / self._numero_residentes())
+                else:
+                    residente.numero_tarefas = ceil(self.tarefas.total_tarefas / self._numero_residentes())
+
+    def _distribui_tarefas_faceis(self):
+        while len(self.tarefas.chores['LIGHT']) > 0 and self._crianca_disponivel():
+            for residente in self._sorted_residents():
+                if residente.is_crianca() and len(self.tarefas.chores['LIGHT']):
+                    tarefa = self.tarefas.tarefa_facil_aleatoria()
+                    residente.tarefas_individuais.append(tarefa)
+                    print(residente, residente.tarefas_individuais)
+        while len(self.tarefas.chores['LIGHT']) > 0 and self._crianca_grande_disponivel():
+            for residente in self._sorted_residents():
+                if residente.is_crianca_grande() and len(self.tarefas.chores['LIGHT']):
+                    tarefa = self.tarefas.tarefa_facil_aleatoria()
+                    residente.tarefas_individuais.append(tarefa)
+                    print(residente, residente.tarefas_individuais)
+        while len(self.tarefas.chores['LIGHT']) > 0:
+            for residente in self._sorted_residents():
+                if residente.is_adulto() and len(self.tarefas.chores['LIGHT']):
+                    tarefa = self.tarefas.tarefa_facil_aleatoria()
+                    residente.tarefas_individuais.append(tarefa)
+                    print(residente, residente.tarefas_individuais)
+
+    def _distribui_tarefas_medias(self):
+        while len(self.tarefas.chores['MID']) > 0 and self._crianca_grande_disponivel():
+            for residente in self._sorted_residents():
+                if residente.is_crianca_grande() and len(self.tarefas.chores['MID']):
+                    tarefa = self.tarefas.tarefa_media_aleatoria()
+                    residente.tarefas_individuais.append(tarefa)
+                    print(residente, residente.tarefas_individuais)
+        if self._adultos():
+            while len(self.tarefas.chores['MID']) > 0:
+                for residente in self._sorted_residents():
+                    if residente.is_adulto() and len(self.tarefas.chores['MID']):
+                        tarefa = self.tarefas.tarefa_media_aleatoria()
+                        residente.tarefas_individuais.append(tarefa)
+                        print(residente, residente.tarefas_individuais)
+
+    def _distribui_tarefas_dificeis(self):
+        while len(self.tarefas.chores['HARD']) > 0:
+            for residente in self._sorted_residents():
+                if residente.is_adulto() and len(self.tarefas.chores['HARD']):
+                    tarefa = self.tarefas.tarefa_dificil_aleatoria()
+                    residente.tarefas_individuais.append(tarefa)
+                    print(residente, residente.tarefas_individuais)
+
     def _numero_residentes(self):
         return len(self.residentes)
 
-    def _residente_aleatorio(self):
-        if len(self.residentes) == 1:
-            return self.residentes[0]
-        else:
-            return random.choice(self.residentes)
+    def _sorted_residents(self):
+        s = sorted(self.residentes, key=attrgetter('age'), reverse=True)
+        return sorted(s, key=lambda i: len(i.tarefas_individuais))
 
-    def _adulto_aleatorio(self):
-        return random.choice(self._adultos())
-
-    def _crianca_grande_aleatoria(self):
-        return random.choice(self._criancas_grandes())
-
-    def _crianca_aleatoria(self):
-        return random.choice(self._criancas())
-
-    def _criancas(self):
-        criancas = list()
+    def _crianca_disponivel(self):
         for residente in self.residentes:
-            if residente.is_crianca():
-                criancas.append(residente)
-
-        return criancas
-
-    def _criancas_grandes(self):
-        criancas_grandes = list()
-        for residente in self.residentes:
-            if residente.is_crianca_grande():
-                criancas_grandes.append(residente)
-
-        return criancas_grandes
-
-    def _adultos(self):
-        adultos = list()
-        for residente in self.residentes:
-            if residente.is_adulto():
-                adultos.append(residente)
-
-        return adultos
-
-    def _residente_incompleto(self, resident: Resident):
-        if resident.is_adulto():
-            for adulto in self._adultos():
-                if len(adulto.tarefas_individuais) < adulto.numero_tarefas:
-                    return adulto
-        if resident.is_crianca_grande():
-            for crianca_grande in self._criancas_grandes():
-                if len(crianca_grande.tarefas_individuais) < crianca_grande.numero_tarefas:
-                    return crianca_grande
-        if resident.is_crianca():
-            for crianca in self._criancas():
-                if len(crianca.tarefas_individuais) < crianca.numero_tarefas:
-                    return crianca
+            if residente.is_crianca() and self.resident_is_valid(residente):
+                return residente
 
         return False
+
+    def _crianca_grande_disponivel(self):
+        for residente in self.residentes:
+            if residente.is_crianca_grande() and self.resident_is_valid(residente):
+                return residente
+
+        return False
+
+    def _adultos(self):
+        for residente in self.residentes:
+            if residente.is_adulto():
+                return True
+
+        return False
+
+    @staticmethod
+    def _attr_sort(resident: Resident):
+        """helper function to sort by more than one attribute, named on the list attrs"""
+        return resident.age
+
+    @staticmethod
+    def resident_is_valid(resident: Resident):
+        if len(resident.tarefas_individuais) < resident.numero_tarefas:
+            return True
+        else:
+            return False
 
     @property
     def numero_residentes(self):
         return self._numero_residentes
-
-    @property
-    def total_tarefas(self):
-        return self._total_tarefas

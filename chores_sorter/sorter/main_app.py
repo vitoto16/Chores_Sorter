@@ -1,22 +1,21 @@
-from alt_domain import Resident, Chores, Sorter
-
+from chores_sorter.sorter.domain import Resident, Chores, Sorter
 
 chores = {'HARD': ['Varrer', 'Passar pano', 'Tirar poeira', 'Organizar Comodos'],
-            'MID': ['Organizar Guarda Roupas', 'Lavar Louca', 'Limpar Fogao',
-                    'Levantar Moveis', 'Limpar Box', 'Lavar Roupas'],
-            'LIGHT': ['Trocar roupa de cama', 'Limpar Patente', 'Abrir Janelas', 'Levar Lixo', 'Limpar Fraldas']
-            }
+          'MID': ['Organizar Guarda Roupas', 'Lavar Louca', 'Limpar Fogao',
+                  'Levantar Moveis', 'Limpar Box', 'Lavar Roupas'],
+          'LIGHT': ['Trocar roupa de cama', 'Limpar Patente', 'Abrir Janelas', 'Levar Lixo', 'Limpar Fraldas']
+          }
 
-vittor = Resident('Vittor', 22)
-rafaela = Resident('Rafaela', 20)
-dante = Resident('Dante', 0)
-dani = Resident('Dani', 21)
-fran = Resident('Fran', 26)
-valentina = Resident('Valentina', 1)
-zezinho = Resident('Zezinho', 11)
+dante = Resident('Dante', 5)
+valentina = Resident('Valentina', 6)
+joao_francisco = Resident('Joao Francisco', 7)
+enrico = Resident('Enrico', 8)
+lucas = Resident('Lucas', 6)
+lorenzo = Resident('Lorenzo', 6)
+bernardo = Resident('Bernardo', 6)
 
 tarefas = Chores(chores)
 
-sorteio = Sorter(tarefas, vittor, rafaela, dante, zezinho)
+sorter = Sorter(tarefas, dante, valentina, joao_francisco, enrico, lucas, lorenzo, bernardo)
 
-sorteio.distribui_tarefas()
+sorter.distribui_tarefas()
